@@ -1,0 +1,29 @@
+DATA:
+    lo_cmrfw TYPE REF TO /bobf/cm_frw,
+    lo_message TYPE REF TO /bobf/cl_frw_message,
+    lo_applog TYPE REF TO /scmtms/cm_applog_msg,
+    lo_tmrequest TYPE REF TO /scmtms/cl_tm_request.
+
+  DATA:
+    lt_message TYPE /bobf/t_frw_message_k.
+
+  DATA:
+    lv_incomp TYPE boolean VALUE abap_true.
+
+  lo_tmrequest ?= lo_request.
+  lo_message ?= lo_tmrequest->mo_message.
+  lo_message->/bobf/if_frw_message~get_messages( IMPORTING
+                                                   et_message = lt_message ).
+
+  TRY.
+      DATA(ls_message) = lt_message[ severity = 'W' ].
+      lo_cmrfw ?= ls_message-message.
+      DATA(lv_msgid) = lo_cmrfw->if_t100_message~t100key-msgid.
+      DATA(lv_msgno) = lo_cmrfw->if_t100_message~t100key-msgno.
+
+      IF '/SCMTMS/INCOMP' NS lv_msgid.
+        SET PARAMETER ID 'MESSA' FIELD lv_incomp.          " Export del indicador de imcompatibilidad.
+      ENDIF.
+
+    CATCH cx_sy_itab_line_not_found.
+  ENDTRY.
